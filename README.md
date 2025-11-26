@@ -2,7 +2,6 @@
 
 [<img alt="github" src="https://img.shields.io/badge/github-araea/kovi__plugin__gif__lab-8da0cb?style=for-the-badge&labelColor=555555&logo=github" height="20">](https://github.com/araea/kovi-plugin-gif-lab)
 [<img alt="crates.io" src="https://img.shields.io/crates/v/kovi-plugin-gif-lab.svg?style=for-the-badge&color=fc8d62&logo=rust" height="20">](https://crates.io/crates/kovi-plugin-gif-lab)
-[<img alt="docs.rs" src="https://img.shields.io/docsrs/kovi-plugin-gif-lab?style=for-the-badge&logo=docs.rs" height="20">](https://docs.rs/kovi-plugin-gif-lab)
 
 Kovi 的 GIF 处理插件，支持合成、拆分、变速、倒放、旋转、拼图等操作。
 

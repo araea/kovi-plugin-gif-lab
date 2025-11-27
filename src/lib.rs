@@ -333,7 +333,6 @@ mod gif_ops {
 
 use kovi::{Message, PluginBuilder, bot::message::Segment, serde_json::json};
 use kovi_plugin_expand_napcat::NapCatApi;
-use std::sync::Arc;
 
 /// 帮助信息
 const HELP_TEXT: &str = r#"🎬 GIF 实验室 - 帮助
@@ -514,50 +513,46 @@ async fn main() {
 
 /// 发送合并转发消息
 async fn send_forward_msg(
-    bot: &Arc<kovi::RuntimeBot>,
-    event: &Arc<kovi::MsgEvent>,
+    bot: &std::sync::Arc<kovi::RuntimeBot>,
+    event: &std::sync::Arc<kovi::MsgEvent>,
     base64_list: Vec<String>,
 ) {
-    let bot_info = bot.get_login_info().await.ok();
-    let (bot_id, bot_name) = bot_info
-        .map(|info| {
-            (
-                info.data
-                    .get("user_id")
-                    .and_then(|u| u.as_str())
-                    .unwrap_or("0")
-                    .to_string(),
-                info.data
-                    .get("nickname")
-                    .and_then(|n| n.as_str())
-                    .unwrap_or("Bot")
-                    .to_string(),
-            )
-        })
-        .unwrap_or_else(|| ("0".to_string(), "Bot".to_string()));
+    // 1. 获取 Bot ID
+    let bot_id = match bot.get_login_info().await {
+        Ok(info) => info.data["user_id"].to_string(),
+        Err(_) => "10000".to_string(),
+    };
 
-    let mut nodes: Vec<_> = base64_list
-        .into_iter()
-        .map(|b64| {
+    // 2. 预处理列表：先判断长度，如果过长直接截断
+    let (process_list, is_truncated) = if base64_list.len() > 99 {
+        (&base64_list[0..99], true)
+    } else {
+        (base64_list.as_slice(), false)
+    };
+
+    if is_truncated {
+        event.reply("⚠️ 切片数量过多，为防止风控，仅发送前 99 张");
+    }
+
+    // 3. 构建节点列表
+    let nodes: Vec<Segment> = process_list
+        .iter()
+        .enumerate()
+        .map(|(index, b64)| {
+            let content = Message::new().add_image(&format!("base64://{}", b64));
+
             Segment::new(
                 "node",
                 json!({
-                    "name": bot_name,
-                    "uin": bot_id,
-                    "content": [{
-                        "type": "image",
-                        "data": { "file": format!("base64://{}", b64) }
-                    }]
+                    "user_id": bot_id,
+                    "nickname": format!("图 {}", index + 1),
+                    "content": content
                 }),
             )
         })
         .collect();
 
-    if nodes.len() > 99 {
-        nodes.truncate(99);
-        event.reply("⚠️ 帧数过多，仅发送前 99 帧");
-    }
-
+    // 4. 发送逻辑
     if let Some(group_id) = event.group_id {
         let _ = bot.send_group_forward_msg(group_id, nodes).await;
     } else {

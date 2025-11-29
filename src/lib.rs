@@ -518,10 +518,7 @@ async fn send_forward_msg(
     base64_list: Vec<String>,
 ) {
     // 1. 获取 Bot ID
-    let bot_id = match bot.get_login_info().await {
-        Ok(info) => info.data["user_id"].to_string(),
-        Err(_) => "10000".to_string(),
-    };
+    let bot_id = event.self_id;
 
     // 2. 预处理列表：先判断长度，如果过长直接截断
     let (process_list, is_truncated) = if base64_list.len() > 99 {
